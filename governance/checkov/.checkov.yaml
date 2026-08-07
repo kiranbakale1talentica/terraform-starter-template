@@ -1,0 +1,9 @@
+directory:
+  - .
+framework:
+  - terraform
+quiet: false
+compact: true
+soft-fail: false
+skip-check:
+  - CKV_AWS_1  # Example skip if documented

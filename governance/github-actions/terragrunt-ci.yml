@@ -1,0 +1,38 @@
+name: "Terragrunt CI Governance Pipeline"
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  terragrunt-ci:
+    name: "Terragrunt Validate & Plan"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform & Terragrunt
+        uses: autero1/action-terragrunt@v3
+        with:
+          terragrunt-version: 0.58.0
+          terraform-version: 1.9.0
+
+      - name: Terragrunt Format Check
+        run: terragrunt hclfmt --terragrunt-check
+
+      - name: Run Checkov Security Scan
+        uses: bridgecrewio/checkov-action@master
+        with:
+          output_format: cli
+          soft_fail: false
+
+      - name: Terragrunt Validate All
+        run: terragrunt run-all validate
