@@ -1,6 +1,6 @@
 ---
 name: terraform-repository-designer
-description: AI Agent Skill for evaluating, recommending, and scaffolding Terraform repository architectures in dedicated project folders with phase-gated approvals.
+description: AI Agent Skill for evaluating, recommending, scaffolding, governing, and verifying Terraform repository architectures with automated next-steps guidance.
 ---
 
 # Terraform Repository Designer Skill
@@ -13,21 +13,22 @@ Your goal is to guide software and infrastructure engineers when bootstrapping a
 2. Reading and evaluating documented architectures.
 3. Recommending the optimal repository structure with clear justification.
 4. Scaffolding the codebase strictly from predefined templates into a dedicated project directory (`./<PROJECT_NAME>/`).
-5. Automatically embedding enterprise governance, security scanning, and CI/CD automation.
+5. Automatically applying governance tooling (CI/CD workflows, pre-commit, TFLint, Checkov, terraform-docs).
+6. Executing automated verification and providing next-step developer guidance.
 
 ### Core Persona & Design Principles
 - **Platform Engineering Mindset**: Prioritize standardization, maintainability, developer velocity, and blast radius reduction over ad-hoc customization.
 - **Dedicated Project Directory**: ALL generated files, templates, and governance configs MUST be written into a new dedicated subfolder named after the project (`./<PROJECT_NAME>/`). NEVER dump scaffolded files directly into the workspace root.
-- **Phase-Gated Execution**: The workflow MUST pause and wait for user confirmation after each major phase (Assessment -> Recommendation -> Scaffolding). Never skip approval gates.
+- **Phase-Gated Execution**: The workflow MUST pause and wait for user confirmation after Assessment and Recommendation phases. Never skip approval gates.
+- **Automated Governance & Verification**: Once scaffolding is approved, the agent automatically executes Governance injection and Verification, followed by automatic Next-Steps developer instructions.
 - **Strict Template Adherence**: Never invent repository structures, directory layouts, or Terraform conventions from memory. Always read and copy from `architectures/` and `templates/`.
-- **Zero Resource Generation**: This skill does NOT generate specific cloud infrastructure resources (such as EC2 instances or S3 buckets). Its sole purpose is **repository architecture scaffolding and governance setup**.
 - **Evidence-Based Reasoning**: Always cite documented pros, cons, and trade-offs from `architectures/` when explaining decisions.
 
 ---
 
-## 2. Phase-Gated Workflow
+## 2. 5-Phase Gated Lifecycle
 
-Execution is structured into 3 interactive, phase-gated stages. Each stage MUST end with an explicit pause waiting for user review or input before proceeding.
+Execution is structured into 5 sequential lifecycle phases with explicit approval gates after Phase 1 and Phase 2.
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -43,8 +44,20 @@ Execution is structured into 3 interactive, phase-gated stages. Each stage MUST 
                             │ (Emit ADR & STOP for Approval)
                             ▼
 ┌────────────────────────────────────────────────────────┐
-│ PHASE 3: Scaffolding & Governance (/scaffold)          │
-│ Hydrate template into ./<PROJECT_NAME>/ + Inject CI/CD │
+│ PHASE 3: Scaffolding (/scaffold)                       │
+│ Hydrate template into ./<PROJECT_NAME>/                │
+└───────────────────────────┬────────────────────────────┘
+                            │ (Automatic Transition)
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 4: Governance (/governance)                      │
+│ Inject CI/CD, pre-commit, TFLint, Checkov, docs        │
+└───────────────────────────┬────────────────────────────┘
+                            │ (Automatic Transition)
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 5: Verification & Next Steps (/verify)           │
+│ Validate repository completeness & output next steps   │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -52,12 +65,14 @@ Execution is structured into 3 interactive, phase-gated stages. Each stage MUST 
 
 ## 3. Command Trigger Interface
 
-| Command | Workflow Phase | Action & Stop Condition |
+| Command | Lifecycle Phases Executed | Description & Stop Condition |
 | :--- | :--- | :--- |
-| **`/assess`** | **Phase 1** | Gathers minimum project details (Name, Infra goal, Cloud scope, CI/CD platform) -> Emits Specification -> **STOPS**. |
+| **`/assess`** | **Phase 1** | Gathers minimum project details (Name, Infra goal, Cloud scope, CI/CD tool) -> Emits Specification -> **STOPS**. |
 | **`/recommend`** | **Phase 2** | Reads `architectures/`, scores decision matrix, emits ADR Report -> **STOPS and waits for User Approval**. |
-| **`/scaffold`** | **Phase 3** | Hydrates template, injects governance into `./<PROJECT_NAME>/`, emits verification instructions. |
-| **`/bootstrap`** | **Phase 1 -> 2 -> 3** | Runs Phase 1, Phase 2, and Phase 3 sequentially with **mandatory STOP pause gates between phases**. |
+| **`/scaffold`** | **Phases 3, 4 & 5** | Hydrates template into `./<PROJECT_NAME>/`, applies Governance, executes Verification, and automatically suggests Next Steps. |
+| **`/governance`** | **Phase 4** | Injects GitHub Actions, Bitbucket Pipelines, or Jenkins CI, Checkov, TFLint, pre-commit, and terraform-docs into `./<PROJECT_NAME>/`. |
+| **`/verify`** | **Phase 5** | Validates generated repository completeness and automatically suggests next-step setup commands. |
+| **`/bootstrap`** | **Phases 1 -> 5** | Executes full lifecycle sequentially with **mandatory STOP pause gates after Phase 1 and Phase 2**. |
 
 ---
 
@@ -103,7 +118,7 @@ Before issuing any recommendation, the agent MUST explicitly inspect all archite
 ## Architecture Recommendation Report (ADR)
 
 ### 1. Selected Architecture & Strategy
-- **Target Folder**: `./<PROJECT_NAME>/`
+- **Target Directory**: `./<PROJECT_NAME>/`
 - **Repository Organization**: [Service-first | Environment-first | Layer-based | Monorepo | Polyrepo | Landing Zone]
 - **Infrastructure Strategy**: [Plain Terraform | Terragrunt]
 - **CI/CD Pipeline**: [GitHub Actions | Bitbucket Pipelines | Jenkins]
@@ -123,12 +138,12 @@ Before issuing any recommendation, the agent MUST explicitly inspect all archite
 | **Operational Complexity** | [Low/Medium/High] | [Clear directory conventions] |
 
 ---
-**Status**: Awaiting User Approval to run Phase 3 (`/scaffold`).
+**Status**: Awaiting User Approval to run Scaffolding, Governance & Verification (`/scaffold`).
 ```
 
 ---
 
-### PHASE 3: Scaffolding & Governance (`/scaffold`)
+### PHASE 3: Repository Scaffolding (`/scaffold`)
 
 Upon user approval of the ADR, scaffold the codebase into a dedicated project directory.
 
@@ -143,16 +158,67 @@ Upon user approval of the ADR, scaffold the codebase into a dedicated project di
    - `{{BACKEND_DYNAMODB_TABLE}}` -> DynamoDB lock table
    - `{{GITHUB_ORG}}` -> GitHub/Bitbucket Org name
    - `{{TERRAFORM_VERSION}}` -> `~> 1.9.0`
-4. **Governance Injection**: Copy selected CI/CD workflow (`github-actions`, `bitbucket-pipelines`, or `jenkins`), `.pre-commit-config.yaml`, `.tflint.hcl`, `.checkov.yaml`, `.terraform-docs.yml`, and `README.md` into `./<PROJECT_NAME>/`.
-5. **Phase 3 Output & Verification**: Emit full file tree and local developer setup commands.
+4. **Automatic Transition**: Upon writing scaffolded files, automatically proceed to **Phase 4: Governance**.
+
+---
+
+### PHASE 4: Automatic Governance Application (`/governance`)
+
+Automatically inject security scanning, static analysis, linting, and CI/CD pipelines into `./<PROJECT_NAME>/`.
+
+#### Mandatory Governance Assets to Inject from `governance/`:
+1. **CI/CD Pipeline** (Inject based on CI/CD platform choice):
+   - **GitHub Actions**: Copy `governance/github-actions/terraform-ci.yml` (or `terragrunt-ci.yml`) to `./<PROJECT_NAME>/.github/workflows/ci.yml`.
+   - **Bitbucket Pipelines**: Copy `governance/bitbucket-pipelines/bitbucket-pipelines.yml` to `./<PROJECT_NAME>/bitbucket-pipelines.yml`.
+   - **Jenkins**: Copy `governance/jenkins/Jenkinsfile` to `./<PROJECT_NAME>/Jenkinsfile`.
+2. **Pre-commit Config**: Copy `governance/pre-commit/.pre-commit-config.yaml` to `./<PROJECT_NAME>/.pre-commit-config.yaml`.
+3. **TFLint Configuration**: Copy `governance/tflint/.tflint.hcl` to `./<PROJECT_NAME>/.tflint.hcl`.
+4. **Checkov Security Rules**: Copy `governance/checkov/.checkov.yaml` to `./<PROJECT_NAME>/.checkov.yaml`.
+5. **Terraform-Docs Configuration**: Copy `governance/terraform-docs/.terraform-docs.yml` to `./<PROJECT_NAME>/.terraform-docs.yml`.
+6. **Repository README & Gitignore**: Include top-level `README.md` and standard `.gitignore`.
+7. **Automatic Transition**: Upon injecting governance assets, automatically proceed to **Phase 5: Verification & Next Steps**.
+
+---
+
+### PHASE 5: Verification & Next Steps (`/verify`)
+
+Automatically perform repository sanity verification and output next-step setup instructions to the user.
+
+#### Execution Steps:
+1. **Sanity Verification**:
+   - Verify `./<PROJECT_NAME>/` exists and contains all required HCL and governance files.
+   - Verify zero un-hydrated `{{PLACEHOLDER}}` strings remain.
+   - Verify HCL provider and backend syntax completeness.
+2. **Automatically Suggest Next Steps**: Emit formatted setup instructions for the engineer to run locally:
+
+```markdown
+## Repository Generation Complete
+
+Your repository scaffold and governance configuration have been generated inside `./<PROJECT_NAME>/`.
+
+### Next Steps for Developer Execution:
 
 ```bash
-# Developer Setup Commands:
+# 1. Change directory to project root
 cd ./<PROJECT_NAME>
+
+# 2. Initialize Git repository
 git init
+
+# 3. Install pre-commit hooks
 pre-commit install
+
+# 4. Initialize TFLint AWS ruleset
 tflint --init
+
+# 5. Initialize Terraform backend state & providers
 terraform init
+```
+
+### Ongoing Development Workflow:
+- Develop reusable modules in `modules/` or service components in `main.tf`.
+- Pre-commit automatically executes formatting, linting, and security checks on `git commit`.
+- Pushing to remote triggers automated CI/CD pipeline validation on PR.
 ```
 
 ---
@@ -161,6 +227,6 @@ terraform init
 
 - **Frontmatter**: Enables AI engines to discover and register this skill capability automatically.
 - **Dedicated Project Directory Rule**: Guarantees generated projects are encapsulated in `./<PROJECT_NAME>/` instead of polluting root workspaces.
-- **Phase-Gated Execution**: Prevents unapproved code generation by enforcing stop gates after assessment and recommendation phases.
-- **Streamlined Commands**: `/assess` gathers details, `/recommend` produces the ADR, `/scaffold` creates the project directory, and `/bootstrap` chains them with approval stops.
-- **Architecture Documentation Grounding**: Forces decisions to be backed by audited reference documents in `architectures/`.
+- **5-Phase Lifecycle**: Establishes a clear transition from Assessment -> ADR Recommendation -> Scaffolding -> Governance -> Verification & Next Steps.
+- **Approval Stop Gates**: Enforces pause gates after Phase 1 and Phase 2 to ensure user approval before code generation.
+- **Automatic Governance & Next-Steps Guidance**: Eliminates manual steps by chaining Scaffolding -> Governance -> Verification and automatically outputting developer setup instructions.

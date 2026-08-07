@@ -1,6 +1,6 @@
 # Terraform Repository Designer (`terraform-starter`)
 
-A Markdown-driven AI Agent Skill designed to help platform engineers evaluate project requirements, select Terraform repository architectures, and generate standardized repository scaffolds inside dedicated project folders (`./<PROJECT_NAME>/`) with pre-configured governance.
+A Markdown-driven AI Agent Skill designed to help platform engineers evaluate project requirements, select Terraform repository architectures, and generate standardized repository scaffolds inside dedicated project folders (`./<PROJECT_NAME>/`) with pre-configured governance and automated verification.
 
 ---
 
@@ -11,7 +11,7 @@ Bootstrapping a Terraform repository requires architectural decisions:
 - Infrastructure orchestration strategy (Plain Terraform or Terragrunt).
 - CI/CD automation and quality controls (GitHub Actions, Bitbucket Pipelines, Jenkins, TFLint, Checkov, pre-commit, terraform-docs).
 
-This framework provides documented decision matrix rules, template structures, and governance defaults. Scaffolding is executed through a 3-phase, approval-gated workflow.
+This framework provides documented decision matrix rules, template structures, and governance defaults. Scaffolding is executed through a 5-phase lifecycle with automated governance application and next-steps verification guidance.
 
 ---
 
@@ -19,7 +19,7 @@ This framework provides documented decision matrix rules, template structures, a
 
 ```
 terraform-starter/
-├── SKILL.md                          # AI Agent skill definition and phase-gated workflow rules
+├── SKILL.md                          # AI Agent skill definition and 5-phase lifecycle rules
 ├── README.md                         # Framework documentation
 ├── architectures/                    # Architectural decision matrix and specifications
 │   ├── ARCHITECTURE_INDEX.md         # Architecture decision matrix and selection index
@@ -51,9 +51,7 @@ terraform-starter/
 
 ---
 
-## Phase-Gated Workflow
-
-Scaffolding is split into 3 interactive phases with explicit approval stops between phases:
+## 5-Phase Lifecycle Workflow
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -69,8 +67,20 @@ Scaffolding is split into 3 interactive phases with explicit approval stops betw
                             │ (Emit ADR & STOP for Approval)
                             ▼
 ┌────────────────────────────────────────────────────────┐
-│ PHASE 3: Scaffolding & Governance (/scaffold)          │
-│ Hydrate template into ./<PROJECT_NAME>/ + Inject CI/CD │
+│ PHASE 3: Scaffolding (/scaffold)                       │
+│ Hydrate template into ./<PROJECT_NAME>/                │
+└───────────────────────────┬────────────────────────────┘
+                            │ (Automatic Transition)
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 4: Governance (/governance)                      │
+│ Inject CI/CD, pre-commit, TFLint, Checkov, docs        │
+└───────────────────────────┬────────────────────────────┘
+                            │ (Automatic Transition)
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 5: Verification & Next Steps (/verify)           │
+│ Validate repository completeness & output next steps   │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -78,16 +88,18 @@ Scaffolding is split into 3 interactive phases with explicit approval stops betw
 
 ## Workflow Commands
 
-| Command | Workflow Phase | Execution & Stop Gate |
+| Command | Executed Lifecycle Phases | Execution & Stop Gate |
 | :--- | :--- | :--- |
 | **`/assess`** | **Phase 1** | Gathers minimum project parameters (Project Name, Infra goal, Cloud scope, CI/CD platform) and **stops**. |
 | **`/recommend`** | **Phase 2** | Reads `architectures/`, scores decision matrix, emits ADR Report, and **stops for user approval**. |
-| **`/scaffold`** | **Phase 3** | Hydrates matching template into `./<PROJECT_NAME>/`, injects governance, and emits verification setup steps. |
-| **`/bootstrap`** | **Phase 1 -> 2 -> 3** | Runs Phase 1, Phase 2, and Phase 3 sequentially with **mandatory approval stops between phases**. |
+| **`/scaffold`** | **Phases 3, 4 & 5** | Hydrates matching template into `./<PROJECT_NAME>/`, applies Governance, executes Verification, and automatically suggests Next Steps. |
+| **`/governance`** | **Phase 4** | Injects selected CI/CD pipeline (GitHub Actions, Bitbucket Pipelines, Jenkins), Checkov, TFLint, pre-commit, and terraform-docs configs. |
+| **`/verify`** | **Phase 5** | Validates generated repository completeness and automatically suggests next-step setup commands. |
+| **`/bootstrap`** | **Phases 1 -> 5** | Executes full lifecycle with **mandatory approval stops after Phase 1 and Phase 2**. |
 
 ---
 
-## Output Location
+## Output Location & Governance Setup
 
 All generated repository files, HCL configurations, and governance policies are placed inside a **new dedicated root directory named after the project**:
 
