@@ -19,7 +19,54 @@ Bootstrapping a Terraform repository requires architectural decisions:
 - Infrastructure orchestration strategy (Plain Terraform or Terragrunt).
 - CI/CD automation and quality controls (GitHub Actions, Bitbucket Pipelines, Jenkins, TFLint, Checkov, pre-commit, terraform-docs).
 
-This framework provides documented decision matrix rules, template structures, and governance defaults. Scaffolding is executed through a 5-phase lifecycle with automated governance application and next-steps verification guidance.
+---
+
+## Quickstart
+
+### Option 1: AI Agent Skill (Recommended)
+
+1. Clone or copy this repository into your AI Agent skills folder (e.g., `.agents/skills/terraform-repository-designer` or `~/.gemini/config/skills/`).
+2. Open your AI coding assistant in any workspace and run:
+   ```
+   /bootstrap
+   ```
+   or prompt:
+   > "Bootstrap a new Terraform repository for `my-payment-service` on AWS using GitHub Actions."
+
+3. The agent will run the 5-phase lifecycle: collect parameters, recommend an architecture, scaffold files inside `./<PROJECT_NAME>/`, inject governance (CI/CD, pre-commit, TFLint, Checkov), and output developer setup steps.
+
+---
+
+### Option 2: Standalone Manual Copy
+
+If you want to use the pre-built templates without an AI agent:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/kiranbakale1talentica/terraform-starter-template.git
+cd terraform-starter-template
+
+# 2. Create your project directory and copy desired template (e.g. service-first)
+mkdir ../my-service-infra
+cp -r templates/service-first/* ../my-service-infra/
+
+# 3. Copy governance configurations into your new project
+cp governance/pre-commit/.pre-commit-config.yaml ../my-service-infra/
+cp governance/tflint/.tflint.hcl ../my-service-infra/
+cp governance/checkov/.checkov.yaml ../my-service-infra/
+cp governance/terraform-docs/.terraform-docs.yml ../my-service-infra/
+
+# Copy target CI/CD workflow (GitHub Actions, Bitbucket, or Jenkins)
+mkdir -p ../my-service-infra/.github/workflows
+cp governance/github-actions/terraform-ci.yml ../my-service-infra/.github/workflows/ci.yml
+
+# 4. Initialize and start developing
+cd ../my-service-infra
+git init
+pre-commit install
+tflint --init
+terraform init
+```
 
 ---
 
