@@ -1,6 +1,6 @@
 # Terraform Repository Designer (`terraform-starter`)
 
-A Markdown-driven AI Agent Skill designed to help platform engineers evaluate project requirements, select Terraform repository architectures, and generate standardized repository scaffolds with security and governance tooling configured.
+A Markdown-driven AI Agent Skill designed to help platform engineers evaluate project requirements, select Terraform repository architectures, and generate standardized repository scaffolds inside dedicated project folders (`./<PROJECT_NAME>/`) with pre-configured governance.
 
 ---
 
@@ -11,7 +11,7 @@ Bootstrapping a Terraform repository requires architectural decisions:
 - Infrastructure orchestration strategy (Plain Terraform or Terragrunt).
 - CI/CD automation and quality controls (GitHub Actions, Bitbucket Pipelines, Jenkins, TFLint, Checkov, pre-commit, terraform-docs).
 
-This framework provides documented decision matrix rules, template structures, and governance defaults to automate repository scaffolding.
+This framework provides documented decision matrix rules, template structures, and governance defaults. Scaffolding is executed through a 3-phase, approval-gated workflow.
 
 ---
 
@@ -19,7 +19,7 @@ This framework provides documented decision matrix rules, template structures, a
 
 ```
 terraform-starter/
-├── SKILL.md                          # AI Agent skill definition and workflow rules
+├── SKILL.md                          # AI Agent skill definition and phase-gated workflow rules
 ├── README.md                         # Framework documentation
 ├── architectures/                    # Architectural decision matrix and specifications
 │   ├── ARCHITECTURE_INDEX.md         # Architecture decision matrix and selection index
@@ -51,36 +51,57 @@ terraform-starter/
 
 ---
 
-## Usage Guide
+## Phase-Gated Workflow
 
-### Agent Invocation
+Scaffolding is split into 3 interactive phases with explicit approval stops between phases:
 
-Invoke the skill within an AI agent environment:
+```
+┌────────────────────────────────────────────────────────┐
+│ PHASE 1: Assessment (/assess)                         │
+│ Collect Project Name, Infra Goal, Cloud Scope, CI/CD   │
+└───────────────────────────┬────────────────────────────┘
+                            │ (Emit Spec & STOP)
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 2: Recommendation (/recommend)                   │
+│ Read architectures/, Score Matrix, Emit ADR Report     │
+└───────────────────────────┬────────────────────────────┘
+                            │ (Emit ADR & STOP for Approval)
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 3: Scaffolding & Governance (/scaffold)          │
+│ Hydrate template into ./<PROJECT_NAME>/ + Inject CI/CD │
+└────────────────────────────────────────────────────────┘
+```
 
-> "Use the terraform-repository-designer skill to bootstrap a new microservice infrastructure repository on AWS."
+---
 
-The agent executes the workflow defined in [SKILL.md](file:///c:/Users/kiranb/DevOps-projects/terraform-starter-template/SKILL.md):
+## Workflow Commands
 
-1. **Step 1: Project Assessment**: Collects required diagnostic parameters (Team size, Account scope, Blast radius, Tooling preference, CI/CD platform).
-2. **Step 2: Read Architecture Specifications**: Reads reference documents in `architectures/` to score the decision matrix.
-3. **Step 3: Recommend Architecture**: Emits an Architecture Decision Record (ADR) detailing selection rationale, trade-offs, and alternative analysis.
-4. **Step 4: Select Template**: Selects the matching template from `templates/`.
-5. **Step 5: Hydrate Placeholders**: Replaces standard variables (`{{PROJECT_NAME}}`, `{{AWS_REGION}}`, `{{BACKEND_S3_BUCKET}}`).
-6. **Step 6: Inject Governance**: Copies target CI/CD pipeline (GitHub Actions, Bitbucket Pipelines, or Jenkins), Checkov, TFLint, pre-commit, and terraform-docs settings.
-7. **Step 7: Generate Repository**: Outputs the scaffolded directory structure and bootstrap commands.
-
-### Workflow Commands
-
-The framework supports step-by-step trigger commands:
-
-| Command | Workflow Phase | Description |
+| Command | Workflow Phase | Execution & Stop Gate |
 | :--- | :--- | :--- |
-| **`/bootstrap`** | Steps 1 – 7 | Executes the complete workflow from diagnosis to code generation. |
-| **`/assess`** | Step 1 | Gathers project diagnostic parameters. |
-| **`/recommend`** | Steps 2 & 3 | Reads `architectures/` specifications and generates an ADR report. |
-| **`/scaffold`** | Steps 4 & 5 | Selects the matching template and hydrates variable placeholders. |
-| **`/governance`** | Step 6 | Applies CI/CD, linting, security, and documentation configurations. |
-| **`/verify`** | Step 7 | Validates generated output and provides local setup steps. |
+| **`/assess`** | **Phase 1** | Gathers minimum project parameters (Project Name, Infra goal, Cloud scope, CI/CD platform) and **stops**. |
+| **`/recommend`** | **Phase 2** | Reads `architectures/`, scores decision matrix, emits ADR Report, and **stops for user approval**. |
+| **`/scaffold`** | **Phase 3** | Hydrates matching template into `./<PROJECT_NAME>/`, injects governance, and emits verification setup steps. |
+| **`/bootstrap`** | **Phase 1 -> 2 -> 3** | Runs Phase 1, Phase 2, and Phase 3 sequentially with **mandatory approval stops between phases**. |
+
+---
+
+## Output Location
+
+All generated repository files, HCL configurations, and governance policies are placed inside a **new dedicated root directory named after the project**:
+
+```
+./<PROJECT_NAME>/
+├── .github/ (or bitbucket-pipelines.yml / Jenkinsfile)
+├── .pre-commit-config.yaml
+├── .tflint.hcl
+├── .checkov.yaml
+├── .terraform-docs.yml
+├── README.md
+├── main.tf / services / environments / layers
+└── providers.tf / backend.tf / variables.tf
+```
 
 ---
 

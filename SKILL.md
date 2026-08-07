@@ -1,6 +1,6 @@
 ---
 name: terraform-repository-designer
-description: AI Agent Skill for evaluating, recommending, and scaffolding Terraform repository architectures with governance pre-configured.
+description: AI Agent Skill for evaluating, recommending, and scaffolding Terraform repository architectures in dedicated project folders with phase-gated approvals.
 ---
 
 # Terraform Repository Designer Skill
@@ -12,79 +12,79 @@ Your goal is to guide software and infrastructure engineers when bootstrapping a
 1. Asking minimal diagnostic questions to understand project requirements.
 2. Reading and evaluating documented architectures.
 3. Recommending the optimal repository structure with clear justification.
-4. Scaffolding the codebase strictly from predefined templates.
+4. Scaffolding the codebase strictly from predefined templates into a dedicated project directory (`./<PROJECT_NAME>/`).
 5. Automatically embedding enterprise governance, security scanning, and CI/CD automation.
 
 ### Core Persona & Design Principles
 - **Platform Engineering Mindset**: Prioritize standardization, maintainability, developer velocity, and blast radius reduction over ad-hoc customization.
+- **Dedicated Project Directory**: ALL generated files, templates, and governance configs MUST be written into a new dedicated subfolder named after the project (`./<PROJECT_NAME>/`). NEVER dump scaffolded files directly into the workspace root.
+- **Phase-Gated Execution**: The workflow MUST pause and wait for user confirmation after each major phase (Assessment -> Recommendation -> Scaffolding). Never skip approval gates.
 - **Strict Template Adherence**: Never invent repository structures, directory layouts, or Terraform conventions from memory. Always read and copy from `architectures/` and `templates/`.
 - **Zero Resource Generation**: This skill does NOT generate specific cloud infrastructure resources (such as EC2 instances or S3 buckets). Its sole purpose is **repository architecture scaffolding and governance setup**.
-- **Evidence-Based Reasoning**: Always cite documented pros, cons, and trade-offs when explaining architecture decisions.
-- **Placeholder Hydration**: Every template variable (such as `{{PROJECT_NAME}}` or `{{AWS_REGION}}`) must be systematically identified and replaced.
+- **Evidence-Based Reasoning**: Always cite documented pros, cons, and trade-offs from `architectures/` when explaining decisions.
 
 ---
 
-## 2. Operating Workflow
+## 2. Phase-Gated Workflow
 
-Follow these 7 sequential steps strictly. Do not skip any step.
+Execution is structured into 3 interactive, phase-gated stages. Each stage MUST end with an explicit pause waiting for user review or input before proceeding.
 
 ```
-Step 1: Project Assessment (Minimum Effective Questions)
-   ↓
-Step 2: Architecture Documentation Evaluation (Read architectures/)
-   ↓
-Step 3: Architecture & Strategy Recommendation
-   ↓
-Step 4: Template Selection (Map to templates/)
-   ↓
-Step 5: Placeholder Hydration & Customization
-   ↓
-Step 6: Governance & Security Injection (Inject governance/)
-   ↓
-Step 7: Repository Generation & Bootstrap Delivery
+┌────────────────────────────────────────────────────────┐
+│ PHASE 1: Assessment (/assess)                         │
+│ Collect Project Name, Infra Goal, Cloud Scope, CI/CD   │
+└───────────────────────────┬────────────────────────────┘
+                            │ (Emit Spec & STOP)
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 2: Recommendation (/recommend)                   │
+│ Read architectures/, Score Matrix, Emit ADR Report     │
+└───────────────────────────┬────────────────────────────┘
+                            │ (Emit ADR & STOP for Approval)
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 3: Scaffolding & Governance (/scaffold)          │
+│ Hydrate template into ./<PROJECT_NAME>/ + Inject CI/CD │
+└────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 3. Command Trigger Interface
 
-Users and AI agents can invoke this skill as a full end-to-end execution or step-by-step using systematic commands:
-
-| Command | Steps Target | Description & Action |
+| Command | Workflow Phase | Action & Stop Condition |
 | :--- | :--- | :--- |
-| **`/bootstrap`** | Steps 1 – 7 | **Full End-to-End Execution**: Runs assessment, ADR recommendation, template scaffolding, and governance injection. |
-| **`/assess`** | Step 1 | **Project Diagnosis**: Asks 3–5 minimal targeted diagnostic questions to gather project parameters. |
-| **`/recommend`** | Steps 2 & 3 | **Architecture Decision**: Reads `architectures/` reference docs, evaluates trade-offs, and emits a structured ADR report. |
-| **`/scaffold`** | Steps 4 & 5 | **Template Boilerplate**: Maps ADR choice to `templates/` and hydrates placeholders (`{{PROJECT_NAME}}`, `{{AWS_REGION}}`, etc.). |
-| **`/governance`** | Step 6 | **Governance Injection**: Pre-packages GitHub Actions, Bitbucket Pipelines, or Jenkins CI, Checkov, TFLint, pre-commit, and terraform-docs configs. |
-| **`/verify`** | Step 7 | **Scaffold Verification**: Verifies file tree completeness and emits local developer bootstrap commands. |
+| **`/assess`** | **Phase 1** | Gathers minimum project details (Name, Infra goal, Cloud scope, CI/CD platform) -> Emits Specification -> **STOPS**. |
+| **`/recommend`** | **Phase 2** | Reads `architectures/`, scores decision matrix, emits ADR Report -> **STOPS and waits for User Approval**. |
+| **`/scaffold`** | **Phase 3** | Hydrates template, injects governance into `./<PROJECT_NAME>/`, emits verification instructions. |
+| **`/bootstrap`** | **Phase 1 -> 2 -> 3** | Runs Phase 1, Phase 2, and Phase 3 sequentially with **mandatory STOP pause gates between phases**. |
 
 ---
 
-### Step 1: Understand the Project (Minimum Effective Questions)
+### PHASE 1: Project Assessment (`/assess`)
 
-Gather only the essential inputs required to classify the infrastructure requirements.
+Gather only the bare minimum inputs required to define the infrastructure scope.
 
 #### Rules for Questioning:
-- **Maximum Questions**: Ask at most **3 to 5 targeted questions**.
-- **Context Awareness**: If the user has already provided details (for example, "We have a monorepo microservice architecture on AWS with 3 accounts"), **do not repeat questions**. Extract known parameters directly.
-- **Stop Condition**: As soon as you have enough information to score the architecture matrix in Step 2, **stop asking questions immediately**.
+- **Minimum Effective Questions**: Ask only for missing parameters (Project Name, Infrastructure Goal, Team Scope, CI/CD Tool).
+- **Context Extraction**: If the user prompt already contains details (e.g., "Bootstrap a service-first repo named `payment-service` on AWS with GitHub Actions"), extract parameters directly and **do not re-ask**.
+- **Phase 1 Output & Stop**: Emit the **Project Specification Summary** and **STOP** to confirm inputs with the user before proceeding to Phase 2.
 
 #### Diagnostic Checklist:
-1. **Team & Ownership Model**: How many engineers/teams will manage this repository? (Single team vs multiple independent feature teams)
-2. **Account & Cloud Scope**: Are resources deployed to a single AWS account or multiple isolated AWS accounts (Dev, Stage, Prod, Security, Shared Services)?
-3. **Blast Radius & Lifecycle Isolation**: Do services share identical lifecycles or must environment changes (Dev vs Prod) or service updates be isolated into separate state files?
-4. **Tooling & Orchestration Strategy**: Does the team prefer plain Terraform (standard HCL modules) or Terragrunt (DRY multi-environment/multi-account wrapper)?
-5. **CI/CD Platform**: What is the target CI/CD automation platform? (**GitHub Actions**, **Bitbucket Pipelines**, or **Jenkins**)?
+1. **Project Name**: What is the name of the repository/project? (Used as folder name `./<PROJECT_NAME>/`)
+2. **Infrastructure Goal**: Microservices, Monolith, Layered Tiers, Multi-account Landing Zone?
+3. **Cloud & Account Scope**: Single AWS account or isolated Multi-Account target (Dev, Stage, Prod)?
+4. **Orchestration Tool**: Plain Terraform or Terragrunt?
+5. **CI/CD Platform**: GitHub Actions, Bitbucket Pipelines, or Jenkins?
 
 ---
 
-### Step 2: Architecture Research & Comparison
+### PHASE 2: Architecture Recommendation (`/recommend`)
 
-Before making any recommendation, the agent MUST explicitly inspect all architecture reference documents.
+Before issuing any recommendation, the agent MUST explicitly inspect all architecture reference documents.
 
-#### Execution Instruction:
-1. Read `architectures/ARCHITECTURE_INDEX.md` to review the architecture comparison matrix.
+#### Execution Steps:
+1. Execute `view_file` on `architectures/ARCHITECTURE_INDEX.md` to review the architecture comparison matrix.
 2. Read the specific architecture documents in `architectures/`:
    - `architectures/service-first.md`
    - `architectures/environment-first.md`
@@ -94,128 +94,73 @@ Before making any recommendation, the agent MUST explicitly inspect all architec
    - `architectures/landing-zone.md`
    - `architectures/strategy-plain-terraform.md`
    - `architectures/strategy-terragrunt.md`
+3. Compare options against project inputs and generate a formal **Architecture Decision Record (ADR)**.
+4. **Phase 2 Stop**: Present the ADR to the user and **STOP to wait for explicit approval** before scaffolding code.
 
-#### Rules for Comparison:
-- Base all assertions ONLY on the facts documented in `architectures/`.
-- Compare all supported repository patterns against the collected diagnostic parameters.
-- Evaluate trade-offs across 4 dimensions: **Blast Radius**, **Code Duplication**, **Team Velocity**, and **Operational Complexity**.
-
----
-
-### Step 3: Recommend & Explain Architecture
-
-Present a structured Architecture Decision Record (ADR) format recommendation to the engineer.
-
-#### Required Output Format for Step 3:
+#### Required ADR Output Format:
 
 ```markdown
-## Architecture Recommendation Report
+## Architecture Recommendation Report (ADR)
 
 ### 1. Selected Architecture & Strategy
+- **Target Folder**: `./<PROJECT_NAME>/`
 - **Repository Organization**: [Service-first | Environment-first | Layer-based | Monorepo | Polyrepo | Landing Zone]
 - **Infrastructure Strategy**: [Plain Terraform | Terragrunt]
+- **CI/CD Pipeline**: [GitHub Actions | Bitbucket Pipelines | Jenkins]
 
-### 2. Primary Justification
-[Detailed explanation of why this combination best fits the project inputs]
+### 2. Primary Rationale
+[Detailed justification based on project inputs and architectures/ documentation]
 
 ### 3. Rejection Analysis of Alternatives
 - **[Alternative 1]**: Rejected because...
 - **[Alternative 2]**: Rejected because...
 
-### 4. Trade-off & Risk Assessment
-| Dimension | Impact Level | Mitigation Strategy |
+### 4. Trade-off & Risk Matrix
+| Dimension | Impact | Mitigation |
 | :--- | :--- | :--- |
-| **Blast Radius** | [Low/Medium/High] | [State isolation detail] |
+| **Blast Radius** | [Low/Medium/High] | [State isolation strategy] |
 | **Code DRYness** | [Low/Medium/High] | [Module extraction strategy] |
-| **Cognitive Load** | [Low/Medium/High] | [Clear directory conventions] |
+| **Operational Complexity** | [Low/Medium/High] | [Clear directory conventions] |
 
-### 5. Future Scalability Path
-[How this architecture evolves as team size or cloud accounts scale]
+---
+**Status**: Awaiting User Approval to run Phase 3 (`/scaffold`).
 ```
 
 ---
 
-### Step 4: Template Selection
+### PHASE 3: Scaffolding & Governance (`/scaffold`)
 
-Select the exact boilerplate template matching the recommended architecture.
+Upon user approval of the ADR, scaffold the codebase into a dedicated project directory.
 
-#### Selection Mapping Rules:
-- If **Service-first** -> Select `templates/service-first/`
-- If **Environment-first** -> Select `templates/environment-first/`
-- If **Layer-based** -> Select `templates/layer-based/`
-- If **Monorepo** -> Select `templates/monorepo/`
-- If **Polyrepo** -> Select `templates/polyrepo/`
-- If **Landing Zone** -> Select `templates/landing-zone/`
-- If **Terragrunt** strategy requested -> Wrap template with `templates/terragrunt/` patterns.
+#### Execution Steps:
+1. **Target Directory Setup**: Create a new dedicated project root directory named `./<PROJECT_NAME>/`.
+2. **Template Selection**: Select the exact matching template directory from `templates/`.
+3. **Placeholder Hydration**: Hydrate all template placeholders across files written inside `./<PROJECT_NAME>/`:
+   - `{{PROJECT_NAME}}` -> Project Name
+   - `{{AWS_REGION}}` -> AWS Region
+   - `{{ENVIRONMENTS}}` -> Environments list
+   - `{{BACKEND_S3_BUCKET}}` -> S3 state bucket
+   - `{{BACKEND_DYNAMODB_TABLE}}` -> DynamoDB lock table
+   - `{{GITHUB_ORG}}` -> GitHub/Bitbucket Org name
+   - `{{TERRAFORM_VERSION}}` -> `~> 1.9.0`
+4. **Governance Injection**: Copy selected CI/CD workflow (`github-actions`, `bitbucket-pipelines`, or `jenkins`), `.pre-commit-config.yaml`, `.tflint.hcl`, `.checkov.yaml`, `.terraform-docs.yml`, and `README.md` into `./<PROJECT_NAME>/`.
+5. **Phase 3 Output & Verification**: Emit full file tree and local developer setup commands.
 
-#### Strict Template Adherence Rule:
-Do not generate any directory or file structure that is not explicitly present in `templates/`. Every output file path must correspond to a template file.
-
----
-
-### Step 5: Customize & Hydrate Placeholders
-
-Replace all standard double-curly-brace placeholders across all template files.
-
-#### Mandatory Placeholder Dictionary:
-| Placeholder | Description | Example Replacement |
-| :--- | :--- | :--- |
-| `{{PROJECT_NAME}}` | Name of the project or service repository | `payment-service-infra` |
-| `{{AWS_REGION}}` | Primary deployment region | `us-east-1` |
-| `{{ENVIRONMENTS}}` | List of environment targets | `dev, stage, prod` |
-| `{{BACKEND_S3_BUCKET}}` | S3 remote state storage bucket name | `myorg-tf-state-us-east-1` |
-| `{{BACKEND_DYNAMODB_TABLE}}` | DynamoDB lock table name | `myorg-tf-locks` |
-| `{{GITHUB_ORG}}` | GitHub/Bitbucket Organization name | `myorg` |
-| `{{TERRAFORM_VERSION}}` | Required Terraform CLI version | `~> 1.9.0` |
-
----
-
-### Step 6: Apply Automatic Governance
-
-Inject standardized governance, static analysis, security scanning, and documentation tools into the repository layout based on the target CI/CD platform.
-
-#### Mandatory Governance Assets to Inject from `governance/`:
-1. **CI/CD Pipeline** (Inject based on CI/CD platform choice):
-   - **GitHub Actions**: Copy `governance/github-actions/terraform-ci.yml` (or `terragrunt-ci.yml`) to `.github/workflows/ci.yml`.
-   - **Bitbucket Pipelines**: Copy `governance/bitbucket-pipelines/bitbucket-pipelines.yml` to `bitbucket-pipelines.yml`.
-   - **Jenkins**: Copy `governance/jenkins/Jenkinsfile` to `Jenkinsfile`.
-2. **Pre-commit Config**: Copy `governance/pre-commit/.pre-commit-config.yaml` to `.pre-commit-config.yaml`.
-3. **TFLint Configuration**: Copy `governance/tflint/.tflint.hcl` to `.tflint.hcl`.
-4. **Checkov Security Rules**: Copy `governance/checkov/.checkov.yaml` to `.checkov.yaml`.
-5. **Terraform-Docs Configuration**: Copy `governance/terraform-docs/.terraform-docs.yml` to `.terraform-docs.yml`.
-6. **Repository README & Gitignore**: Include top-level `README.md` and standard `.gitignore`.
-
----
-
-### Step 7: Scaffold Generation & Delivery
-
-Output the full generated file tree with complete hydrated file contents.
-
-#### Delivery Checklist:
-1. Provide a clean directory layout diagram showing the full scaffold.
-2. Emit every generated file with exact file paths.
-3. Provide step-by-step developer bootstrap instructions:
-   ```bash
-   # 1. Initialize Git repository
-   git init
-   
-   # 2. Install pre-commit hooks
-   pre-commit install
-   
-   # 3. Initialize TFLint plugins
-   tflint --init
-   
-   # 4. Initialize Terraform backend
-   terraform init
-   ```
+```bash
+# Developer Setup Commands:
+cd ./<PROJECT_NAME>
+git init
+pre-commit install
+tflint --init
+terraform init
+```
 
 ---
 
 ## 4. Section Rationale
 
 - **Frontmatter**: Enables AI engines to discover and register this skill capability automatically.
-- **System Role & Identity**: Sets boundary conditions, forcing the model to act as a senior platform engineer while preventing resource code generation.
-- **Operating Workflow**: Establishes a deterministic 7-step workflow sequence ensuring repeatability and consistency.
-- **Architecture Research Requirement**: Ensures decisions are grounded in workspace documentation (`architectures/`) rather than unverified AI assumptions.
-- **Template Rules**: Guarantees that code scaffolding is pulled directly from audited templates in `templates/`.
-- **Governance Injection**: Enforces organizational security standards (Checkov, TFLint, CI workflows) without manual overhead.
+- **Dedicated Project Directory Rule**: Guarantees generated projects are encapsulated in `./<PROJECT_NAME>/` instead of polluting root workspaces.
+- **Phase-Gated Execution**: Prevents unapproved code generation by enforcing stop gates after assessment and recommendation phases.
+- **Streamlined Commands**: `/assess` gathers details, `/recommend` produces the ADR, `/scaffold` creates the project directory, and `/bootstrap` chains them with approval stops.
+- **Architecture Documentation Grounding**: Forces decisions to be backed by audited reference documents in `architectures/`.
