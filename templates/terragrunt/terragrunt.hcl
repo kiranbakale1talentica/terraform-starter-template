@@ -7,11 +7,11 @@ remote_state {
     if_exists = "overwrite_terragrunt"
   }
   config = {
-    bucket         = "{{BACKEND_S3_BUCKET}}"
-    key            = "${path_relative_to_include()}/terraform.tfstate"
-    region         = "{{AWS_REGION}}"
-    dynamodb_table = "{{BACKEND_DYNAMODB_TABLE}}"
-    encrypt        = true
+    bucket       = "{{BACKEND_S3_BUCKET}}"
+    key          = "${path_relative_to_include()}/terraform.tfstate"
+    region       = "{{AWS_REGION}}"
+    encrypt      = true
+    use_lockfile = true
   }
 }
 

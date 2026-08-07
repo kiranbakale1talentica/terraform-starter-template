@@ -154,8 +154,7 @@ Upon user approval of the ADR, scaffold the codebase into a dedicated project di
    - `{{PROJECT_NAME}}` -> Project Name
    - `{{AWS_REGION}}` -> AWS Region
    - `{{ENVIRONMENTS}}` -> Environments list
-   - `{{BACKEND_S3_BUCKET}}` -> S3 state bucket
-   - `{{BACKEND_DYNAMODB_TABLE}}` -> DynamoDB lock table
+   - `{{BACKEND_S3_BUCKET}}` -> S3 state bucket (uses native S3 state locking via `use_lockfile = true`)
    - `{{GITHUB_ORG}}` -> GitHub/Bitbucket Org name
    - `{{TERRAFORM_VERSION}}` -> `~> 1.9.0`
 4. **Automatic Transition**: Upon writing scaffolded files, automatically proceed to **Phase 4: Governance**.
