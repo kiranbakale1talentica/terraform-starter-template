@@ -1,5 +1,13 @@
 # Terraform Repository Designer (`terraform-starter`)
 
+![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.9.0-7B42BC?logo=terraform&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?logo=amazon-aws&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?logo=github-actions&logoColor=white)
+![Bitbucket Pipelines](https://img.shields.io/badge/Bitbucket_Pipelines-0052CC?logo=bitbucket&logoColor=white)
+![Jenkins](https://img.shields.io/badge/Jenkins-D24939?logo=jenkins&logoColor=white)
+![Pre-commit](https://img.shields.io/badge/Pre--commit-enabled-brightgreen?logo=pre-commit)
+![Checkov](https://img.shields.io/badge/Checkov-Security-blue?logo=bridgecrew)
+
 A Markdown-driven AI Agent Skill designed to help platform engineers evaluate project requirements, select Terraform repository architectures, and generate standardized repository scaffolds inside dedicated project folders (`./<PROJECT_NAME>/`) with pre-configured governance and automated verification.
 
 ---
