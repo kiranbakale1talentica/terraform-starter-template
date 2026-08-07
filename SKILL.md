@@ -75,7 +75,7 @@ Gather only the essential inputs required to classify the infrastructure require
 2. **Account & Cloud Scope**: Are resources deployed to a single AWS account or multiple isolated AWS accounts (Dev, Stage, Prod, Security, Shared Services)?
 3. **Blast Radius & Lifecycle Isolation**: Do services share identical lifecycles or must environment changes (Dev vs Prod) or service updates be isolated into separate state files?
 4. **Tooling & Orchestration Strategy**: Does the team prefer plain Terraform (standard HCL modules) or Terragrunt (DRY multi-environment/multi-account wrapper)?
-5. **Deployment Target & Region Scope**: What are the primary cloud provider, target regions, and CI/CD environment targets?
+5. **CI/CD Platform**: What is the target CI/CD automation platform? (**GitHub Actions**, **Bitbucket Pipelines**, or **Jenkins**)?
 
 ---
 
@@ -165,23 +165,25 @@ Replace all standard double-curly-brace placeholders across all template files.
 | `{{ENVIRONMENTS}}` | List of environment targets | `dev, stage, prod` |
 | `{{BACKEND_S3_BUCKET}}` | S3 remote state storage bucket name | `myorg-tf-state-us-east-1` |
 | `{{BACKEND_DYNAMODB_TABLE}}` | DynamoDB lock table name | `myorg-tf-locks` |
-| `{{GITHUB_ORG}}` | GitHub Organization name | `myorg` |
+| `{{GITHUB_ORG}}` | GitHub/Bitbucket Organization name | `myorg` |
 | `{{TERRAFORM_VERSION}}` | Required Terraform CLI version | `~> 1.9.0` |
 
 ---
 
 ### Step 6: Apply Automatic Governance
 
-Inject standardized governance, static analysis, security scanning, and documentation tools into the repository layout.
+Inject standardized governance, static analysis, security scanning, and documentation tools into the repository layout based on the target CI/CD platform.
 
 #### Mandatory Governance Assets to Inject from `governance/`:
-1. **GitHub Actions Workflows**: Copy `governance/github-actions/terraform-ci.yml` (or `terragrunt-ci.yml`) to `.github/workflows/ci.yml`.
+1. **CI/CD Pipeline** (Inject based on CI/CD platform choice):
+   - **GitHub Actions**: Copy `governance/github-actions/terraform-ci.yml` (or `terragrunt-ci.yml`) to `.github/workflows/ci.yml`.
+   - **Bitbucket Pipelines**: Copy `governance/bitbucket-pipelines/bitbucket-pipelines.yml` to `bitbucket-pipelines.yml`.
+   - **Jenkins**: Copy `governance/jenkins/Jenkinsfile` to `Jenkinsfile`.
 2. **Pre-commit Config**: Copy `governance/pre-commit/.pre-commit-config.yaml` to `.pre-commit-config.yaml`.
 3. **TFLint Configuration**: Copy `governance/tflint/.tflint.hcl` to `.tflint.hcl`.
 4. **Checkov Security Rules**: Copy `governance/checkov/.checkov.yaml` to `.checkov.yaml`.
-5. **Infracost Configuration**: Copy `governance/infracost/infracost.yml` to `infracost.yml`.
-6. **Terraform-Docs Configuration**: Copy `governance/terraform-docs/.terraform-docs.yml` to `.terraform-docs.yml`.
-7. **Repository README & Gitignore**: Include top-level `README.md` and standard `.gitignore`.
+5. **Terraform-Docs Configuration**: Copy `governance/terraform-docs/.terraform-docs.yml` to `.terraform-docs.yml`.
+6. **Repository README & Gitignore**: Include top-level `README.md` and standard `.gitignore`.
 
 ---
 

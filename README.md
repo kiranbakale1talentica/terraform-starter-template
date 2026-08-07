@@ -41,11 +41,12 @@ terraform-starter/
 │   ├── landing-zone/                 # AWS Landing Zone boilerplate
 │   └── terragrunt/                   # Terragrunt wrapper boilerplate
 └── governance/                       # Enterprise Security & Quality Controls
-    ├── github-actions/               # CI/CD Workflows (terraform-ci.yml, terragrunt-ci.yml)
+    ├── github-actions/               # GitHub Actions CI Workflows (terraform-ci.yml, terragrunt-ci.yml)
+    ├── bitbucket-pipelines/          # Bitbucket Pipelines Workflow (bitbucket-pipelines.yml)
+    ├── jenkins/                      # Declarative Jenkins Pipeline (Jenkinsfile)
     ├── pre-commit/                   # .pre-commit-config.yaml hook suite
     ├── tflint/                       # .tflint.hcl ruleset
     ├── checkov/                      # .checkov.yaml policy scanner settings
-    ├── infracost/                    # Infracost workflow configuration
     └── terraform-docs/               # .terraform-docs.yml automated doc generator
 ```
 
@@ -59,12 +60,12 @@ Invoke the skill within your AI agent workspace:
 
 The agent will automatically execute the 7-step state machine defined in [SKILL.md](file:///c:/Users/kiranb/DevOps-projects/terraform-starter-template/SKILL.md):
 
-1. **Step 1: Understand Project**: Asks 3–5 targeted diagnostic questions (Team size, Account scope, Blast radius, Tooling preference).
+1. **Step 1: Understand Project**: Asks 3–5 targeted diagnostic questions (Team size, Account scope, Blast radius, Tooling preference, CI/CD platform).
 2. **Step 2: Read Architectures**: Reads reference documents in `architectures/` and scores the decision matrix.
 3. **Step 3: Recommend & Justify**: Emits a structured Architecture Decision Report (ADR) detailing why the selected architecture fits best and why alternatives were rejected.
 4. **Step 4: Template Selection**: Maps the decision directly to `templates/`.
 5. **Step 5: Hydrate Placeholders**: Replaces standard variables (`{{PROJECT_NAME}}`, `{{AWS_REGION}}`, `{{BACKEND_S3_BUCKET}}`).
-6. **Step 6: Inject Governance**: Injects GitHub Actions workflows, Checkov, TFLint, pre-commit, and terraform-docs settings from `governance/`.
+6. **Step 6: Inject Governance**: Injects selected CI/CD pipeline (GitHub Actions, Bitbucket Pipelines, or Jenkins), Checkov, TFLint, pre-commit, and terraform-docs settings from `governance/`.
 7. **Step 7: Scaffold Generation**: Emits the complete hydrated file structure with developer bootstrap commands.
 
 ### Systematic Trigger Commands
@@ -77,7 +78,7 @@ You can run the full workflow or trigger individual steps using systematic comma
 | **`/assess`** | **Diagnostic Phase**: Asks 3–5 minimal diagnostic questions to gather project scope. |
 | **`/recommend`** | **Architecture Decision**: Reads `architectures/` docs and generates an ADR recommendation report. |
 | **`/scaffold`** | **Template Generation**: Scaffolds matching codebase from `templates/` and hydrates variables. |
-| **`/governance`** | **Governance Injection**: Applies GitHub Actions, Checkov, TFLint, pre-commit, and terraform-docs tooling. |
+| **`/governance`** | **Governance Injection**: Applies CI/CD (GitHub Actions, Bitbucket Pipelines, Jenkins), Checkov, TFLint, pre-commit, and terraform-docs tooling. |
 | **`/verify`** | **Scaffold Verification**: Verifies output completeness and outputs local setup commands (`git init`, `terraform init`). |
 
 ---
@@ -89,7 +90,7 @@ You can run the full workflow or trigger individual steps using systematic comma
 2. **Environment-First**: Directory structure split by environment (`dev`, `stage`, `prod`). Ideal for small teams and monoliths.
 3. **Layer-Based**: Vertical tier isolation (`00-base`, `10-vpc`, `20-db`, `30-apps`). Ideal for strict tier blast-radius reduction.
 4. **Monorepo**: Single Git repository containing all org infrastructure with path-filtered CI/CD.
-5. **Polyrepo**: Independent GitHub repos per component for strict access boundaries.
+5. **Polyrepo**: Independent GitHub/Bitbucket repos per component for strict access boundaries.
 6. **Landing Zone**: Multi-account AWS Control Tower layout (`management`, `security`, `shared-services`, `workloads`).
 
 ### Infrastructure Strategies
@@ -101,7 +102,7 @@ You can run the full workflow or trigger individual steps using systematic comma
 ## 🔒 Embedded Governance Suite
 
 Every generated repository automatically includes:
-- **GitHub Actions OIDC CI/CD**: Runs `fmt`, `tflint`, `checkov`, `terraform-docs`, and `infracost` automatically on every PR.
+- **Multi-CI/CD Automation**: Pre-packaged pipelines for **GitHub Actions**, **Bitbucket Pipelines**, or **Jenkins** (`fmt`, `validate`, `tflint`, `checkov`, `terraform-docs`).
 - **Pre-commit Hooks**: Enforces clean syntax before git commits (`.pre-commit-config.yaml`).
 - **TFLint AWS Ruleset**: Static analysis for AWS resource naming and deprecated attributes (`.tflint.hcl`).
 - **Checkov Security Policies**: Static vulnerability scanning for cloud compliance (`.checkov.yaml`).

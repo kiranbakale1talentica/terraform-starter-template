@@ -1,0 +1,65 @@
+// Declarative Jenkins Governance Pipeline for Terraform
+
+pipeline {
+    agent any
+
+    environment {
+        TF_VERSION = '1.9.0'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Quality Gates') {
+            parallel {
+                stage('Format & Lint') {
+                    steps {
+                        sh '''
+                            terraform fmt -check -recursive
+                            tflint --init
+                            tflint -f compact
+                        '''
+                    }
+                }
+
+                stage('Security Scan') {
+                    steps {
+                        sh '''
+                            checkov -d . --compact --quiet
+                        '''
+                    }
+                }
+
+                stage('Validation') {
+                    steps {
+                        sh '''
+                            terraform init -backend=false
+                            terraform validate
+                        '''
+                    }
+                }
+
+                stage('Documentation') {
+                    steps {
+                        sh '''
+                            terraform-docs markdown table --output-file README.md --output-mode inject .
+                        '''
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+        failure {
+            echo 'Terraform Governance Pipeline Failed. Please resolve lints or security findings.'
+        }
+    }
+}

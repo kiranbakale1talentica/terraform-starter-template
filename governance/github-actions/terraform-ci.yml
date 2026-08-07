@@ -50,11 +50,6 @@ jobs:
           output-file: README.md
           output-method: inject
 
-      - name: Infracost Breakdown
-        uses: infracost/actions/setup@v2
-        with:
-          api-key: ${{ secrets.INFRACOST_API_KEY }}
-
       - name: Terraform Init & Validate
         run: |
           terraform init -backend=false
